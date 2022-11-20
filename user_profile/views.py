@@ -1,10 +1,9 @@
 from django.contrib.auth.models import User, auth
-from django.middleware.csrf import get_token
 from enum import Enum
 
-from utils.http.decorators.json_api import json_api
-from utils.http.formatters.to_json_response import to_json_response
+from utils.http.responses.JSONResponse import JSONResponse
 
+from .forms import UserProfileForm
 from .models import UserProfile
 
 class HttpResponseStatus(Enum):
@@ -13,17 +12,17 @@ class HttpResponseStatus(Enum):
 
 class HttpRequestErrorCode(Enum):
     USER_EXISTS=1
+    ENTITY_CREATION_ERROR=2
+    VALIDATION_ERROR=3
 
 
-@json_api
 def private_user_profile(request):
     user = request.user
-    user_profile = UserProfile.objects.get(user=user.id)
+    user_profile = UserProfile.objects.values('nickname', 'bio', 'created_at').get(user=user.id)
 
-    return user_profile
+    return JSONResponse(user_profile)
 
 
-@json_api
 def signup(request):
     username = request.POST['username']
     nickname = request.POST['nickname']
@@ -35,24 +34,61 @@ def signup(request):
     if User.objects.filter(username=username).exists():
         data = {
             'error': 'Username is already taken',
-            'error_code': HttpRequestErrorCode.USER_EXISTS,
+            'error_code': HttpRequestErrorCode.USER_EXISTS.value,
         }
 
-        return to_json_response(data, status=HttpResponseStatus.BAD_REQUEST)
+        return JSONResponse(data, status=HttpResponseStatus.BAD_REQUEST.value)
     
     user = User.objects.create_user(username=username, password=password)
     user.save()
 
-    #log user in and redirect to settings page
+    # Log user in
     user_login = auth.authenticate(username=username, password=password)
     auth.login(request, user_login)
 
-    #create a UserProfile object for the new user
-    user_profile = UserProfile.objects.create(nickname=nickname, user=user.id)
-    user_profile.save()
-    
-    return { 'profile': user_profile }
+    try:
+        # Create a UserProfile object for the new user
+        user_profile = UserProfile.objects.create(nickname=nickname, user=user)
+        user_profile.save()
+    except:
+        user.delete()
 
-@json_api
-def get_csrf_token(request):
-    return { 'token': get_token(request) }
+        data = {
+            'error': 'User creation error',
+            'error_code': HttpRequestErrorCode.ENTITY_CREATION_ERROR.value,
+        }
+
+        return JSONResponse(data, status=HttpResponseStatus.BAD_REQUEST.value)
+
+    data = { 'profile': user_profile }
+
+    return JSONResponse(data)
+
+
+def settings(request):
+    user = request.user
+    user_profile = UserProfile.objects.get(user=user.id)
+
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST)
+        
+        if not form.is_valid():
+            data = {
+                'error': 'Validation error',
+                'error_code': HttpRequestErrorCode.VALIDATION_ERROR.value,
+            }
+
+            return JSONResponse(data, status=HttpResponseStatus.BAD_REQUEST.value)
+        
+        nickname = request.POST.get('nickname', user_profile.nickname)
+        bio = request.POST.get('bio', user_profile.bio)
+        
+        user_profile.nickname = nickname
+        user_profile.bio = bio
+
+        user_profile.save()
+    
+    key_list = ['nickname', 'bio', 'created_at']
+    data = { key: user_profile.__dict__[key] for key in key_list }
+
+    return JSONResponse(data)

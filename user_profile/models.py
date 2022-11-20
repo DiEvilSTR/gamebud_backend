@@ -9,5 +9,5 @@ class UserProfile(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
-    def __str__(self):
-        return self.nickname
+    # def __str__(self):
+    #     return self.nickname
