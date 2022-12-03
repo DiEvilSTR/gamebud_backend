@@ -2,19 +2,16 @@ from django.contrib.auth.models import User, auth
 from enum import Enum
 
 from utils.http.responses.JSONResponse import JSONResponse
+from utils.http.constants import HttpMethod, HttpStatus
+from utils.http.decorators.views.view import view
 
 from .forms import UserProfileForm
 from .models import UserProfile
-
-class HttpResponseStatus(Enum):
-    BAD_REQUEST=400
-    NOT_FOUND=404
 
 class HttpRequestErrorCode(Enum):
     USER_EXISTS=1
     ENTITY_CREATION_ERROR=2
     VALIDATION_ERROR=3
-
 
 def private_user_profile(request):
     user = request.user
@@ -37,7 +34,7 @@ def signup(request):
             'error_code': HttpRequestErrorCode.USER_EXISTS.value,
         }
 
-        return JSONResponse(data, status=HttpResponseStatus.BAD_REQUEST.value)
+        return JSONResponse(data, status=HttpStatus.BAD_REQUEST)
     
     user = User.objects.create_user(username=username, password=password)
     user.save()
@@ -58,28 +55,19 @@ def signup(request):
             'error_code': HttpRequestErrorCode.ENTITY_CREATION_ERROR.value,
         }
 
-        return JSONResponse(data, status=HttpResponseStatus.BAD_REQUEST.value)
+        return JSONResponse(data, status=HttpStatus.BAD_REQUEST)
 
     data = { 'profile': user_profile }
 
     return JSONResponse(data)
 
-
+# TODO: Add response validation
+@view(RequestForm=UserProfileForm)
 def settings(request):
     user = request.user
     user_profile = UserProfile.objects.get(user=user.id)
 
-    if request.method == 'POST':
-        form = UserProfileForm(request.POST)
-        
-        if not form.is_valid():
-            data = {
-                'error': 'Validation error',
-                'error_code': HttpRequestErrorCode.VALIDATION_ERROR.value,
-            }
-
-            return JSONResponse(data, status=HttpResponseStatus.BAD_REQUEST.value)
-        
+    if request.method == HttpMethod.POST:
         nickname = request.POST.get('nickname', user_profile.nickname)
         bio = request.POST.get('bio', user_profile.bio)
         
