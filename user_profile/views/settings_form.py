@@ -9,4 +9,3 @@ bio_constraints = { 'max_length': bio_field_constraints['max_length'], 'required
 class UserSettingsForm(ExactForm):
     nickname = CharField(**nickname_constraints)
     bio = CharField(**bio_constraints)
-    

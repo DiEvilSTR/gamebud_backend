@@ -1,3 +1,4 @@
+from django.contrib.auth.models import User
 from django.contrib.auth import logout
 
 from utils.http.responses.JSONResponse import JSONResponse
@@ -6,8 +7,11 @@ from utils.http.decorators.views.view import view
 from utils.validation.no_data_form import NoDataForm
 
 
-@view(methods={ HttpMethod.GET: False, HttpMethod.POST: True }, RequestForm=NoDataForm)
-def logout_view(request):
+@view(methods={ HttpMethod.GET: False, HttpMethod.DELETE: True }, RequestForm=NoDataForm)
+def delete_view(request):
+    user = User.objects.get(username=request.user.username)
+    
     logout(request)
-
+    user.delete()
+    
     return JSONResponse(None)

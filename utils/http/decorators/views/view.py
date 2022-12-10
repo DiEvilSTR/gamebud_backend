@@ -8,6 +8,7 @@ from utils.http.responses.JSONResponse import JSONResponse
 DEFAULT_HTTP_METHODS = {
     HttpMethod.GET: True,
     HttpMethod.POST: False,
+    HttpMethod.DELETE: False,
 }
 
 
