@@ -8,11 +8,11 @@ from utils.constants import SystemErrorCode
 from user_profile.models import UserProfile
 from .login_form import LoginForm
 
-@view(login_required=False, methods={ HttpMethod.GET: False, HttpMethod.POST: True }, RequestForm=LoginForm)
-def login_view(request):
+@view(login_required=False, post=LoginForm)
+def login_view(request, data):
     if request.method == HttpMethod.POST:
-        username = request.POST['username']
-        password = request.POST['password']
+        username = data['username']
+        password = data['password']
 
         user = authenticate(username=username, password=password)
 

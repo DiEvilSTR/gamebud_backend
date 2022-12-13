@@ -7,7 +7,7 @@ from utils.http.decorators.views.view import view
 from utils.validation.no_data_form import NoDataForm
 
 
-@view(methods={ HttpMethod.GET: False, HttpMethod.DELETE: True }, RequestForm=NoDataForm)
+@view(delete=NoDataForm)
 def delete_view(request):
     user = User.objects.get(username=request.user.username)
     

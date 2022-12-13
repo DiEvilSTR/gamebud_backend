@@ -9,11 +9,11 @@ from user_profile.models import UserProfile
 from .signup_form import SignupForm
 
 
-@view(login_required=False, methods={ HttpMethod.POST: True }, RequestForm=SignupForm)
-def signup_view(request):
-    username = request.POST['username']
-    nickname = request.POST['nickname']
-    password = request.POST['password']
+@view(login_required=False, post=SignupForm)
+def signup_view(request, data):
+    username = data['username']
+    nickname = data['nickname']
+    password = data['password']
 
     if User.objects.filter(username=username).exists():
         error = {
