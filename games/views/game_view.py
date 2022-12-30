@@ -1,5 +1,3 @@
-from django.db.models import Count
-
 from utils.http.responses.JSONResponse import JSONResponse
 from utils.http.decorators.views.view import view
 from games.models.game import Game
